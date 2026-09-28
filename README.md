@@ -1,6 +1,10 @@
 # sentinel-laya
 Fine tuned Laya model to detect prompt injection and jailbreak attacks in LLM inputs with a Jev like interface
 
+Model: [3p3r/sentinel-laya](https://huggingface.co/3p3r/sentinel-laya)
+
+This checkpoint is the English Laya model, not the multilingual one. The benchmark it lags on, deepset/prompt-injections, is not English, and the attacks it misses there are not English either. In production, put a language gate in front of the model. If the text is not English, classify it as an attack and do not use this score.
+
 ## Benchmark: sentinel-v2 vs laya base, recipe fine-tune, and distillation
 
 Metric: **Binary F1** (positive = jailbreak/prompt-injection, threshold 0.5), measured locally on 2x RTX 3090 (deezx).
@@ -119,3 +123,18 @@ Train items: 297618 | Teacher hold-out: 11000 | Blocklist drops: 0 | Train teach
 | verazuo_reg | 9979 | 5613 |
 | wildjailbreak_train_adv | 41744 | 21869 |
 | wildjailbreak_train_van | 41830 | 20440 |
+
+## Citation
+
+Cite this model:
+
+```bibtex
+@misc{sentinel-laya2026,
+  title        = {sentinel-laya: Prompt-injection and jailbreak detection on English Laya},
+  author       = {{3p3r}},
+  year         = {2026},
+  howpublished = {Hugging Face and GitHub},
+  url          = {https://huggingface.co/3p3r/sentinel-laya},
+  note         = {Code: \url{https://github.com/3p3r/sentinel-laya}}
+}
+```
