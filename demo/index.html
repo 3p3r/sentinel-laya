@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sentinel Laya</title>
+  </head>
+  <body class="bg-stone-50 text-stone-900">
+    <main class="mx-auto max-w-xl px-4 py-10">
+      <h1 class="text-2xl font-semibold tracking-tight">Sentinel Laya</h1>
+      <p class="mt-2 text-sm leading-6 text-stone-600">
+        Checks one English prompt for a jailbreak or prompt injection. The model downloads from Hugging Face and runs in this browser.
+      </p>
+      <p class="mt-2 text-sm leading-6 text-stone-600">
+        English only. If the text is not English, do not use this score.
+      </p>
+
+      <p id="caps-warning" class="mt-4 hidden rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-950" role="status"></p>
+
+      <form id="form" class="mt-6">
+        <fieldset id="fields" class="space-y-4 disabled:opacity-60">
+          <div>
+            <span class="text-sm font-medium">Backend</span>
+            <div class="mt-2 flex gap-4 text-sm">
+              <label class="inline-flex items-center gap-2">
+                <input id="backend-gpu" type="radio" name="backend" value="webgpu" checked />
+                GPU
+              </label>
+              <label class="inline-flex items-center gap-2">
+                <input id="backend-cpu" type="radio" name="backend" value="cpu" />
+                CPU
+              </label>
+            </div>
+          </div>
+          <div>
+            <label for="prompt" class="text-sm font-medium">Prompt</label>
+            <textarea id="prompt" name="prompt" rows="6" class="mt-2 w-full rounded-md border border-stone-300 bg-white p-3 text-sm leading-6"></textarea>
+          </div>
+          <button id="check" type="submit" class="rounded-md bg-stone-900 px-4 py-2 text-sm font-medium text-white">Check</button>
+        </fieldset>
+      </form>
+
+      <p id="status" class="mt-4 text-sm leading-6" role="status" aria-live="polite">Ready.</p>
+
+      <section id="result" class="mt-6 hidden rounded-md border p-4" aria-live="polite">
+        <p id="decision" class="text-xl font-semibold"></p>
+        <p id="verdict" class="mt-1 text-sm"></p>
+        <p id="score" class="mt-1 text-sm"></p>
+        <p id="elapsed" class="mt-1 text-sm"></p>
+        <p id="ran-on" class="mt-1 text-sm text-stone-600"></p>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
