@@ -14,6 +14,7 @@ All models answered identical inputs in the same environment. The five-benchmark
 | laya base (zero-shot) | 0.735 | 0.733 | 0.991 | 0.600 | 0.785 | **0.769** |
 | laya fine-tuned (Sentinel recipe) | 0.676 | 0.758 | 0.942 | 0.196 | 0.890 | **0.692** |
 | laya distilled from sentinel-v2 | 0.967 | 0.955 | 0.973 | 0.648 | 0.982 | **0.905** |
+| laya distilled plus gold inject labels | 0.966 | 0.965 | 0.970 | 0.739 | 0.981 | **0.924** |
 
 ### Per-benchmark delta vs sentinel-v2 (F1)
 
@@ -22,6 +23,7 @@ All models answered identical inputs in the same environment. The five-benchmark
 | laya base (zero-shot) | -0.233 | -0.228 | +0.006 | -0.311 | -0.209 |
 | laya fine-tuned (Sentinel recipe) | -0.292 | -0.203 | -0.043 | -0.715 | -0.104 |
 | laya distilled from sentinel-v2 | -0.001 | -0.007 | -0.012 | -0.263 | -0.012 |
+| laya distilled plus gold inject labels | -0.001 | +0.004 | -0.015 | -0.172 | -0.012 |
 
 ### Secondary metrics
 
@@ -51,6 +53,12 @@ All models answered identical inputs in the same environment. The five-benchmark
 | laya distilled from sentinel-v2 | deepset/prompt-injections | 662 | 0.3973 | 1.000 | 0.479 | 0.793 | 4.3 |
 | laya distilled from sentinel-v2 | xTRam1/safe-guard-prompt-injection | 10296 | 0.3056 | 0.974 | 0.990 | 0.989 | 5.01 |
 | laya distilled from sentinel-v2 | internal held-out | 7611 | 0.298 | 0.671 | 0.617 | 0.796 | 5.18 |
+| laya distilled plus gold inject labels | rogue-security/prompt-injections-benchmark | 5000 | 0.4006 | 0.958 | 0.975 | 0.973 | 6.15 |
+| laya distilled plus gold inject labels | allenai/wildjailbreak | 2210 | 0.905 | 0.979 | 0.951 | 0.938 | 5.84 |
+| laya distilled plus gold inject labels | jackhhao/jailbreak-classification | 1306 | 0.51 | 0.955 | 0.985 | 0.969 | 8.8 |
+| laya distilled plus gold inject labels | deepset/prompt-injections | 662 | 0.3973 | 0.981 | 0.593 | 0.834 | 4.31 |
+| laya distilled plus gold inject labels | xTRam1/safe-guard-prompt-injection | 10296 | 0.3056 | 0.968 | 0.995 | 0.988 | 5 |
+| laya distilled plus gold inject labels | internal held-out | 7611 | 0.298 | 0.662 | 0.636 | 0.795 | 5.18 |
 
 ### Verdict (pre-registered criteria)
 
@@ -59,6 +67,8 @@ All models answered identical inputs in the same environment. The five-benchmark
 **Recipe fine-tune: FAIL — avg F1 0.6923 trails sentinel-v2 0.9636 by 28.16% (> 5% margin).**
 
 **Distillation: FAIL — avg F1 0.9048 trails sentinel-v2 0.9636 by 6.10% (> 5% margin).**
+
+**Distillation plus gold inject labels: WIN — avg F1 0.9243 is within 5% of sentinel-v2 0.9636 (rel. diff 4.08%).**
 
 ### Caveats
 
@@ -84,6 +94,12 @@ All models answered identical inputs in the same environment. The five-benchmark
 | toxic_chat | 182 | 0 |
 
 Train items: 68499 | Held-out test: 7611 | Attack total: 22833 | Benign total: 53277
+
+### Inject gold hold-out
+
+This slice is 5% of the new inject rows only. It was not trained on. The label is the dataset's own hard label. It is not included in the five-benchmark average.
+
+Binary F1 0.996 | precision 0.996 | recall 0.996 | n 782
 
 ### Distillation pool
 
