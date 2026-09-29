@@ -1,0 +1,19 @@
+{
+  "name": "sentinel-laya",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup": "tsx scripts/setup.ts",
+    "data": "tsx scripts/data.ts",
+    "train": "tsx scripts/train.ts",
+    "eval": "tsx scripts/eval.ts",
+    "report": "tsx scripts/report.ts",
+    "distill": "tsx scripts/distill.ts"
+  },
+  "dependencies": {
+    "@types/node": "^26.6.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "zx": "^8.8.5"
+  }
+}

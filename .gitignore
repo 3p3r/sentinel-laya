@@ -5,3 +5,4 @@ models/
 results/
 *.log
 __pycache__/
+demo/dist/
