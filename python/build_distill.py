@@ -12,9 +12,6 @@ Writes, unless --items-out / --holdout-out / --report-out say otherwise:
 With --inject, the 5% holdout is taken from that file only. The --raw rows
 all go into training. The inject holdout text is also written when
 --holdout-text-out is set.
-
-With --en3k, the 5% holdout is taken from that file only. --raw and --inject
-all go into training, except texts listed in --exclude-text.
 """
 import argparse
 import json
@@ -82,38 +79,11 @@ def _filter_blocklist(raw, block):
     return pd.DataFrame(keep), dropped
 
 
-def _exclude_keys(path):
-    if not path:
-        return set()
-    held = pd.read_parquet(path)
-    keys = set()
-    for text in held["text"].astype(str):
-        k = norm_key(text)
-        if k:
-            keys.add(k)
-    print(f"exclude texts: {len(keys)} from {path}", flush=True)
-    return keys
-
-
-def _drop_excluded(frame, keys):
-    if frame.empty or not keys:
-        return frame, 0
-    keep = []
-    dropped = 0
-    for row in frame.itertuples(index=False):
-        if norm_key(row.text) in keys:
-            dropped += 1
-            continue
-        keep.append(row)
-    return pd.DataFrame(keep), dropped
-
-
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--model-id", default=MODEL_ID)
     ap.add_argument("--raw", default="data/distill_raw.parquet")
     ap.add_argument("--inject", default="", help="gold-label rows; holdout is taken from this file only")
-    ap.add_argument("--en3k", default="", help="english 3k rows; holdout is taken from this file only")
-    ap.add_argument("--exclude-text", default="", help="parquet of texts that must not be trained")
     ap.add_argument("--holdout-frac", type=float, default=0.05)
     ap.add_argument("--items-out", default="data/distill_items.pt")
     ap.add_argument("--holdout-out", default="data/distill_holdout.pt")
@@ -128,44 +98,8 @@ def main():
     frame, dropped = _filter_blocklist(raw, block)
     print(f"after blocklist: {len(frame)} dropped={dropped}", flush=True)
     holdout_scope = "union"
-    banned = _exclude_keys(args.exclude_text)
 
-    if args.en3k:
-        parts = [frame]
-        report_parts = [frame]
-        if args.inject:
-            inject_raw = pd.read_parquet(args.inject)
-            print(f"inject rows: {len(inject_raw)}", flush=True)
-            inject, inject_dropped = _filter_blocklist(inject_raw, block)
-            dropped += inject_dropped
-            inject, held_dropped = _drop_excluded(inject, banned)
-            dropped += held_dropped
-            print(
-                f"inject after blocklist: {len(inject)} "
-                f"blocklist_dropped={inject_dropped} holdout_excluded={held_dropped}",
-                flush=True,
-            )
-            if len(inject):
-                parts.append(inject)
-                report_parts.append(inject)
-        en3k_raw = pd.read_parquet(args.en3k)
-        print(f"en3k rows: {len(en3k_raw)}", flush=True)
-        en3k, en3k_dropped = _filter_blocklist(en3k_raw, block)
-        dropped += en3k_dropped
-        en3k, en3k_held = _drop_excluded(en3k, banned)
-        dropped += en3k_held
-        print(f"en3k after blocklist: {len(en3k)} dropped={en3k_dropped + en3k_held}", flush=True)
-        if len(en3k) < 2:
-            raise SystemExit("en3k file has no rows left after the blocklist")
-        en3k = en3k.sample(frac=1.0, random_state=SEED).reset_index(drop=True)
-        n_hold = max(1, int(round(len(en3k) * args.holdout_frac)))
-        hold_df = en3k.iloc[:n_hold].reset_index(drop=True)
-        parts.append(en3k.iloc[n_hold:].reset_index(drop=True))
-        report_parts.append(en3k)
-        train_df = _upsample(pd.concat(parts, ignore_index=True))
-        frame = pd.concat(report_parts, ignore_index=True)
-        holdout_scope = "en3k"
-    elif args.inject:
+    if args.inject:
         inject_raw = pd.read_parquet(args.inject)
         print(f"inject rows: {len(inject_raw)}", flush=True)
         inject, inject_dropped = _filter_blocklist(inject_raw, block)
@@ -192,7 +126,7 @@ def main():
         flush=True,
     )
 
-    model_dir = snapshot_download(MODEL_ID)
+    model_dir = snapshot_download(args.model_id)
     _fix_tokenizer_config(model_dir)
     tok = AutoTokenizer.from_pretrained(os.path.join(model_dir, "tokenizer"))
     max_len, head_max_len = 512, 256

@@ -3,6 +3,10 @@ Fine tuned Laya model to detect prompt injection and jailbreak attacks in LLM in
 
 Model: [3p3r/sentinel-laya](https://huggingface.co/3p3r/sentinel-laya)
 
+Multilingual successor: [3p3r/sentinel-laya-multilingual](https://huggingface.co/3p3r/sentinel-laya-multilingual)
+
+The Hugging Face weights are still the gold-inject checkpoint.
+
 This checkpoint is the English Laya model, not the multilingual one. The benchmark it lags on, deepset/prompt-injections, is not English, and the attacks it misses there are not English either. In production, put a language gate in front of the model. If the text is not English, classify it as an attack and do not use this score.
 
 ## Benchmark: sentinel-v2 vs laya base, recipe fine-tune, and distillation
@@ -74,15 +78,17 @@ All models answered identical inputs in the same environment. The five-benchmark
 
 **Distillation plus gold inject labels: WIN — avg F1 0.9243 is within 5% of sentinel-v2 0.9636 (rel. diff 4.08%).**
 
+A later pass trained on [3nesdeniz/english-prompt-injection-3k](https://huggingface.co/datasets/3nesdeniz/english-prompt-injection-3k), starting from the gold-inject checkpoint and using that file's own 0/1 labels. Those weights were discarded. Five-benchmark average Binary F1 fell from 0.9243 to 0.9153, and the gap versus sentinel-v2 (0.9636) went from 4.08% to 5.02%. Per-benchmark F1 moved from rogue 0.9664 to 0.9669, wildjailbreak 0.9650 to 0.9570, jackhhao 0.9697 to 0.9747, deepset 0.7393 to 0.6961, and xTRam1 0.9812 to 0.9816. Deepset precision went from 0.9811 to 0.9793 and recall from 0.5932 to 0.5399.
+
 ### Caveats
 
 - Sentinel v2's exact training data is unpublished ("3x more data than v1" + private qualifire-synthetics). Laya was fine-tuned on the public v1 recipe from arXiv:2506.05446 (7 public sources, 70/30 benign/attack, 90/10 split).
-- verazuo/jailbreak-llms was deleted from HuggingFace; the identical CSVs were sourced from the authors' GitHub (verazuo/jailbreak_llms).
+- The jailbreak CSVs used here come from the authors' GitHub (verazuo/jailbreak_llms). The same files are also on Hugging Face as TrustAIRLab/in-the-wild-jailbreak-prompts. The old verazuo/jailbreak-llms dataset repo is gone.
 - Laya answers one fixed noul question (identical wording for training and both laya evals); sentinel-v2 is a native binary classifier.
 - Latency is wall-clock per sample at batch size 64 on this machine, not the vendors' numbers.
 - Fine-tuning used a full-attention override of ModernBERT (sliding-window SDPA backward deadlocks on this sm_86 stack). Eval of the tuned checkpoint uses that same config.
 - The tuned model fits the recipe hold-out (internal F1 0.974) but the 5-benchmark average fell vs laya base (0.692 vs 0.769), driven by a recall collapse on deepset (R=0.11).
-- Distillation trains on sentinel-v2 soft labels over a disjoint pool (v1 recipe sources, Salad non-O5, toxic-chat non-jailbreak, wildjailbreak *train*). The five eval sets, wildjailbreak eval, and the recipe internal hold-out are hash-blocked and never used as distillation inputs. Eval still uses gold labels.
+- The first distillation uses sentinel-v2 soft labels on a disjoint pool (v1 recipe sources, Salad non-O5, toxic-chat non-jailbreak, wildjailbreak train). A later round adds hard 0/1 labels on the inject rows. The five eval sets, wildjailbreak eval, and the recipe internal hold-out stay hash-blocked. Eval uses the dataset labels.
 
 ### Training data composition
 

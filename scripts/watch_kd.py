@@ -5,7 +5,7 @@ A graphics-card fault ends the trainer; this starts one new trainer with
 --resume from the last checkpoint. Five deaths inside three minutes stop
 the loop and write WATCH_STOP.
 
-Default paths are the English 3k round.
+Default paths are the multilingual soft-label distill.
 """
 import argparse
 import os
@@ -27,6 +27,7 @@ HOLDOUT = ""
 OUTPUT = ""
 MODEL_ID = ""
 STATE_DIR = ""
+KEEP_TEMPERATURE = False
 
 
 def _note(msg):
@@ -94,9 +95,8 @@ def _start():
             "--epochs", "2",
             "--save-steps", "100",
             "--precision", "bf16",
-            "--keep-temperature",
             "--resume",
-        ],
+        ] + (["--keep-temperature"] if KEEP_TEMPERATURE else []),
         cwd=ROOT,
         env=env,
         stdin=subprocess.DEVNULL,
@@ -110,15 +110,17 @@ def _start():
 
 
 def main():
-    global LOG, WATCH_LOG, INFLIGHT, TRAINER_PID, OUTPUT_FLAG, ITEMS, HOLDOUT, OUTPUT, MODEL_ID, STATE_DIR
+    global LOG, WATCH_LOG, INFLIGHT, TRAINER_PID, OUTPUT_FLAG, ITEMS, HOLDOUT, OUTPUT, MODEL_ID, STATE_DIR, KEEP_TEMPERATURE
     ap = argparse.ArgumentParser()
-    ap.add_argument("--log", default="results/en3k_train.log")
-    ap.add_argument("--state-dir", default="results/en3k")
-    ap.add_argument("--items", default="data/en3k_items.pt")
-    ap.add_argument("--holdout", default="data/en3k_holdout.pt")
-    ap.add_argument("--output", default="models/laya-distill-en3k")
-    ap.add_argument("--model-id", default="models/laya-distill-extra")
+    ap.add_argument("--log", default="results/multi_train.log")
+    ap.add_argument("--state-dir", default="results/multi")
+    ap.add_argument("--items", default="data/multi_items.pt")
+    ap.add_argument("--holdout", default="data/multi_holdout.pt")
+    ap.add_argument("--output", default="models/laya-multi-distill")
+    ap.add_argument("--model-id", default="convaiinnovations/laya-multilingual")
+    ap.add_argument("--keep-temperature", action="store_true")
     args = ap.parse_args()
+    KEEP_TEMPERATURE = args.keep_temperature
     LOG = os.path.join(ROOT, args.log) if not os.path.isabs(args.log) else args.log
     STATE_DIR = args.state_dir
     WATCH_LOG = os.path.join(ROOT, args.state_dir, "watch.log")

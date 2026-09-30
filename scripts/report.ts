@@ -103,12 +103,12 @@ md += `
 ## Caveats
 
 - Sentinel v2's exact training data is unpublished ("3x more data than v1" + private qualifire-synthetics). Laya was fine-tuned on the public v1 recipe from arXiv:2506.05446 (7 public sources, 70/30 benign/attack, 90/10 split).
-- verazuo/jailbreak-llms was deleted from HuggingFace; the identical CSVs were sourced from the authors' GitHub (verazuo/jailbreak_llms).
+- The jailbreak CSVs used here come from the authors' GitHub (verazuo/jailbreak_llms). The same files are also on Hugging Face as TrustAIRLab/in-the-wild-jailbreak-prompts. The old verazuo/jailbreak-llms dataset repo is gone.
 - Laya answers one fixed noul question (identical wording for training and both laya evals); sentinel-v2 is a native binary classifier.
 - Latency is wall-clock per sample at batch size 64 on this machine, not the vendors' numbers.
 - Fine-tuning used a full-attention override of ModernBERT (sliding-window SDPA backward deadlocks on this sm_86 stack). Eval of the tuned checkpoint uses that same config.
 - The tuned model fits the recipe hold-out (internal F1 0.974) but the 5-benchmark average fell vs laya base (0.692 vs 0.769), driven by a recall collapse on deepset (R=0.11).
-- Distillation trains on sentinel-v2 soft labels over a disjoint pool (v1 recipe sources, Salad non-O5, toxic-chat non-jailbreak, wildjailbreak *train*). The five eval sets, wildjailbreak eval, and the recipe internal hold-out are hash-blocked and never used as distillation inputs. Eval still uses gold labels.
+- The first distillation uses sentinel-v2 soft labels on a disjoint pool (v1 recipe sources, Salad non-O5, toxic-chat non-jailbreak, wildjailbreak train). A later round adds hard 0/1 labels on the inject rows. The five eval sets, wildjailbreak eval, and the recipe internal hold-out stay hash-blocked. Eval uses the dataset labels.
 `;
 
 if (existsSync("data/dataset_report.json")) {
