@@ -2,7 +2,7 @@ import { load, type LayaAgent } from "@johnhenry/laya";
 import type { Questions } from "@johnhenry/laya-core";
 import "./style.css";
 
-const MODEL = "3p3r/sentinel-laya";
+const MODEL = "3p3r/sentinel-laya-multilingual";
 
 const QUESTIONS = {
   injection: {
