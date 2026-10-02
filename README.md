@@ -5,7 +5,9 @@ Model: [3p3r/sentinel-laya](https://huggingface.co/3p3r/sentinel-laya)
 
 Multilingual successor: [3p3r/sentinel-laya-multilingual](https://huggingface.co/3p3r/sentinel-laya-multilingual)
 
-The Hugging Face weights are still the gold-inject checkpoint.
+The file on that repo is the short-role revision. Five-benchmark average Binary F1 is 0.9190, 4.63% behind sentinel-v2 (0.9636). The previous multilingual file was 0.9137, 5.18% behind. Deepset F1 is 0.7406 (precision 0.9752, recall 0.5970), up from 0.7173 (precision 0.9557, recall 0.5741). Per-benchmark F1 is rogue 0.9581, wildjailbreak 0.9559, jackhhao 0.9697, deepset 0.7406, and xTRam1 0.9706. Training added [3p3r/short-role-attacks](https://huggingface.co/datasets/3p3r/short-role-attacks).
+
+The Hugging Face weights for this English repo are still the gold-inject checkpoint.
 
 This checkpoint is the English Laya model, not the multilingual one. The benchmark it lags on, deepset/prompt-injections, is not English, and the attacks it misses there are not English either. In production, put a language gate in front of the model. If the text is not English, classify it as an attack and do not use this score.
 

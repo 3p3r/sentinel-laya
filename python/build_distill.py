@@ -12,6 +12,9 @@ Writes, unless --items-out / --holdout-out / --report-out say otherwise:
 With --inject, the 5% holdout is taken from that file only. The --raw rows
 all go into training. The inject holdout text is also written when
 --holdout-text-out is set.
+
+With --extra, the 5% holdout is taken from that file only. --raw and
+--inject all go into training, except texts listed in --exclude-text.
 """
 import argparse
 import json
@@ -67,6 +70,32 @@ def _upsample(frame, max_repeat=4):
     return out.sample(frac=1.0, random_state=SEED).reset_index(drop=True)
 
 
+def _exclude_keys(path):
+    if not path:
+        return set()
+    held = pd.read_parquet(path)
+    keys = set()
+    for text in held["text"].astype(str):
+        key = norm_key(text)
+        if key:
+            keys.add(key)
+    print(f"exclude texts: {len(keys)} from {path}", flush=True)
+    return keys
+
+
+def _drop_excluded(frame, keys):
+    if frame.empty or not keys:
+        return frame, 0
+    keep = []
+    dropped = 0
+    for row in frame.itertuples(index=False):
+        if norm_key(row.text) in keys:
+            dropped += 1
+            continue
+        keep.append(row)
+    return pd.DataFrame(keep), dropped
+
+
 def _filter_blocklist(raw, block):
     keep = []
     dropped = 0
@@ -84,6 +113,8 @@ def main():
     ap.add_argument("--model-id", default=MODEL_ID)
     ap.add_argument("--raw", default="data/distill_raw.parquet")
     ap.add_argument("--inject", default="", help="gold-label rows; holdout is taken from this file only")
+    ap.add_argument("--extra", default="", help="extra rows; holdout is taken from this file only")
+    ap.add_argument("--exclude-text", default="", help="parquet of texts that must not be trained")
     ap.add_argument("--holdout-frac", type=float, default=0.05)
     ap.add_argument("--items-out", default="data/distill_items.pt")
     ap.add_argument("--holdout-out", default="data/distill_holdout.pt")
@@ -98,8 +129,41 @@ def main():
     frame, dropped = _filter_blocklist(raw, block)
     print(f"after blocklist: {len(frame)} dropped={dropped}", flush=True)
     holdout_scope = "union"
+    banned = _exclude_keys(args.exclude_text)
 
-    if args.inject:
+    if args.extra:
+        parts = [frame]
+        if args.inject:
+            inject_raw = pd.read_parquet(args.inject)
+            print(f"inject rows: {len(inject_raw)}", flush=True)
+            inject, inject_dropped = _filter_blocklist(inject_raw, block)
+            dropped += inject_dropped
+            inject, held_dropped = _drop_excluded(inject, banned)
+            dropped += held_dropped
+            print(
+                f"inject after blocklist: {len(inject)} "
+                f"blocklist_dropped={inject_dropped} holdout_excluded={held_dropped}",
+                flush=True,
+            )
+            if len(inject):
+                parts.append(inject)
+        extra_raw = pd.read_parquet(args.extra)
+        print(f"extra rows: {len(extra_raw)}", flush=True)
+        extra, extra_dropped = _filter_blocklist(extra_raw, block)
+        dropped += extra_dropped
+        extra, extra_held = _drop_excluded(extra, banned)
+        dropped += extra_held
+        print(f"extra after blocklist: {len(extra)} dropped={extra_dropped + extra_held}", flush=True)
+        if len(extra) < 2:
+            raise SystemExit("extra file has no rows left after the blocklist")
+        extra = extra.sample(frac=1.0, random_state=SEED).reset_index(drop=True)
+        n_hold = max(1, int(round(len(extra) * args.holdout_frac)))
+        hold_df = extra.iloc[:n_hold].reset_index(drop=True)
+        parts.append(extra.iloc[n_hold:].reset_index(drop=True))
+        train_df = _upsample(pd.concat(parts, ignore_index=True))
+        frame = pd.concat(parts[:-1] + [extra], ignore_index=True)
+        holdout_scope = "extra"
+    elif args.inject:
         inject_raw = pd.read_parquet(args.inject)
         print(f"inject rows: {len(inject_raw)}", flush=True)
         inject, inject_dropped = _filter_blocklist(inject_raw, block)
